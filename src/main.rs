@@ -33,7 +33,7 @@ impl PersonalInfo {
         let name = Works::get_input("Enter your name").expect("err name input");
         let country = Works::get_input("Enter your country").expect("err country input");
 
-        let mut age: Option<u8> = None;
+        let mut age = None;
         while age.is_none() {
             match Works::get_input("enter age").expect("err").parse::<u8>() {
                 Ok(v) => {
