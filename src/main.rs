@@ -1,7 +1,8 @@
-use std::io::{ self, Write };
-
+use std::{ io::{ self, Write, BufRead, BufReader }, path::Path, fs::File };
+use serde::{ Deserialize, Serialize };
 use chrono::prelude::*;
 
+#[derive(Serialize, Deserialize)]
 enum Job {
     Easy,
     Medium,
@@ -17,6 +18,7 @@ impl Job {
         }
     }
 }
+#[derive(Serialize, Deserialize)]
 struct User {
     name: String,
     age: u8,
@@ -116,6 +118,42 @@ impl Manager {
             Err("err".to_string())
         }
     }
+    fn store_to_file(&self, file_name: &str) -> Result<String, String> {
+        if !Path::new(file_name).exists() {
+            let file = match File::create(file_name) {
+                Ok(f) => f,
+                Err(e) => {
+                    return Err("err".to_string());
+                }
+            };
+            match serde_json::to_writer(&file, &self.user) {
+                Ok(_) => Ok("ok".to_owned()),
+                Err(_) => Err("ok".to_owned()),
+            }
+        } else {
+            return Err("err".to_string());
+        }
+    }
+    fn read_to_file(&mut self, file_name: &str) -> Result<String, String> {
+        if Path::new(file_name).exists() {
+            let file = match File::open(file_name) {
+                Ok(f) => f,
+                Err(e) => {
+                    return Err("err".to_string());
+                }
+            };
+            let reader = BufReader::new(file);
+            self.user = match serde_json::from_reader(reader) {
+                Ok(data) => data,
+                Err(e) => {
+                    return Err(format!("err{}", e));
+                }
+            };
+            Ok("Successfully".to_owned())
+        } else {
+            return Err("err".to_string());
+        }
+    }
 }
 
 struct Console {
@@ -171,6 +209,14 @@ impl Console {
                             Ok(e) => println!("{:?}", e),
                             Err(e) => eprint!("{}", e),
                         }
+                    }
+                    "6" => {
+                        let file_name = User::get_input("name to find").expect("err");
+                        self.manager.store_to_file(file_name.as_str()).expect("err");
+                    }
+                    "7" => {
+                        let file_name = User::get_input("name to find").expect("err");
+                        self.manager.read_to_file(file_name.as_str()).expect("err");
                     }
                     _ => { println!("not command") }
                 }
