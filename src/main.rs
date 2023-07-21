@@ -1,176 +1,190 @@
 use std::io::{ self, Write };
 
-use chrono::{ DateTime, Local };
+use chrono::prelude::*;
 
 enum Job {
-    SurvivalJob,
-    TechSupport,
-    FrontEnd,
-    BackEnd,
+    Easy,
+    Medium,
+    Hard,
 }
+
 impl Job {
-    fn to_string(&self) -> &str {
+    fn to_string(&self) -> String {
         match self {
-            Job::SurvivalJob => "low money",
-            Job::TechSupport => "low money more SurvivalJob",
-            Job::FrontEnd => "Good price",
-            Job::BackEnd => "Perfect price",
+            Job::Easy => "Easy way".to_owned(),
+            Job::Medium => "Medium way".to_owned(),
+            Job::Hard => "Hard way".to_owned(),
         }
     }
 }
-struct PersonalInfo {
+struct User {
     name: String,
     age: u8,
-    country: String,
-}
-
-impl PersonalInfo {
-    fn new(name: String, age: u8, country: String) -> Self {
-        Self { name, age, country }
-    }
-
-    fn new_from_console() -> Self {
-        let name = Works::get_input("Enter your name").expect("err name input");
-        let country = Works::get_input("Enter your country").expect("err country input");
-
-        let mut age = None;
-        while age.is_none() {
-            match Works::get_input("enter age").expect("err").parse::<u8>() {
-                Ok(v) => {
-                    age = Some(v);
-                }
-                Err(_) => println!("Please Enter Number"),
-            }
-        }
-
-        Self::new(name, age.expect("err"), country)
-    }
-}
-
-struct JobInfo {
     job: Job,
     time: DateTime<Local>,
 }
 
-impl JobInfo {
-    fn new(job: Job, time: DateTime<Local>) -> Self {
-        Self { job, time }
-    }
-    fn print_job_list() {
-        println!("1: Sur\n2: Support\n3: Frontend\n4: Backend");
-    }
-    fn new_from_console() -> Self {
-        Self::print_job_list();
-        Self::new(
-            match
-                Works::get_input("Enter your specialization").expect("err").to_lowercase().as_str()
-            {
-                "1" => Job::SurvivalJob,
-                "2" => Job::TechSupport,
-                "3" => Job::FrontEnd,
-                "4" => Job::BackEnd,
-                _ => {
-                    println!("your work SurvivalJob");
-                    Job::SurvivalJob
-                }
-            },
-            Local::now()
-        )
-    }
-}
-struct Works {
-    personal_info: PersonalInfo,
-    job_info: JobInfo,
-}
-
-impl Works {
-    fn new(personal_info: PersonalInfo, job_info: JobInfo) -> Self {
-        Self { personal_info, job_info }
+impl User {
+    fn new(name: String, age: u8, job: Job) -> Self {
+        Self { name, age, job, time: Local::now() }
     }
 
     fn get_input(query: &str) -> io::Result<String> {
-        print!("{:?}", query);
+        println!("{}", query);
         io::stdout().flush()?;
 
-        let mut buffer = String::new();
-        io::stdin().read_line(&mut buffer)?;
-        Ok(buffer.trim().to_owned())
+        let mut buf = String::new();
+        io::stdin().read_line(&mut buf)?;
+        Ok(buf.trim().to_owned())
+    }
+    fn print(&self) {
+        println!(
+            "*****\n{}\n{}\n{}\n{}\n*****",
+            self.name,
+            self.age,
+            self.job.to_string(),
+            self.time
+        )
     }
 
     fn new_from_console() -> Self {
-        Self::new(PersonalInfo::new_from_console(), JobInfo::new_from_console())
-    }
+        let name = Self::get_input("your name").expect("err");
 
-    fn print_details(&self) {
-        println!(
-            "\n\nName: {}\nAge: {}\nCountry: {}\nJob: {}\nTime: {}",
-            self.personal_info.name,
-            self.personal_info.age,
-            self.personal_info.country,
-            self.job_info.job.to_string(),
-            self.job_info.time
-        );
+        let mut age: Option<u8> = None;
+        while age.is_none() {
+            match Self::get_input("your age").expect("err").parse::<u8>() {
+                Ok(v) => {
+                    age = Some(v);
+                }
+                Err(e) => eprintln!("{:?}", e),
+            }
+        }
+
+        let job = match Self::get_input("your Job").expect("err").as_str() {
+            "1" => Job::Easy,
+            "2" => Job::Medium,
+            "3" => Job::Hard,
+            _ => {
+                println!("You work easy");
+                Job::Easy
+            }
+        };
+        Self::new(name, age.expect("err"), job)
     }
 }
 
-struct WorksManager {
-    works: Vec<Works>,
+struct Manager {
+    user: Vec<User>,
 }
 
-impl WorksManager {
+impl Manager {
     fn new() -> Self {
-        Self { works: Vec::new() }
+        Self { user: Vec::new() }
     }
 
-    fn print_job(&self) {
-        for job in &self.works {
-            println!("from Manager");
-            job.print_details();
+    fn print_user(&mut self) {
+        for user in &self.user {
+            user.print();
         }
     }
-    fn add_task(&mut self, name: Works) {
-        self.works.push(name)
+    fn add_user(&mut self, user: User) {
+        self.user.push(user)
+    }
+    fn find_user(&mut self, name: &str) -> Option<usize> {
+        self.user.iter().position(|e| e.name == name)
+    }
+    fn remove_user(&mut self, name: &str) -> Result<String, String> {
+        if let Some(e) = self.find_user(&name) {
+            self.user.remove(e);
+            Ok("removed".to_string())
+        } else {
+            Err("err".to_string())
+        }
+    }
+    fn edit_user(&mut self, name: &str, update_task: User) -> Result<String, String> {
+        if let Some(i) = self.find_user(&name) {
+            match self.user.get_mut(i) {
+                Some(user) => {
+                    user.name = update_task.name;
+                    user.age = update_task.age;
+                    user.job = update_task.job;
+                    Ok("update".to_string())
+                }
+                None => todo!(),
+            }
+        } else {
+            Err("err".to_string())
+        }
     }
 }
 
-struct ConsoleManager {
-    work_manager: WorksManager,
-    menu_options: Vec<String>,
+struct Console {
+    manager: Manager,
+    from_console: Vec<String>,
 }
 
-impl ConsoleManager {
+impl Console {
     fn new() -> Self {
         Self {
-            work_manager: WorksManager::new(),
-            menu_options: vec!["add work".to_owned(), "print works".to_owned()],
+            manager: Manager::new(),
+            from_console: vec![
+                "Add Task".to_owned(),
+                "Print task".to_owned(),
+                "Find task".to_owned(),
+                "Remove task".to_owned(),
+                "Edit task".to_owned(),
+                "Store task to file".to_owned(),
+                "Read task from file".to_owned()
+            ],
         }
     }
-
     fn print_menu(&self) {
-        for (i, m) in self.menu_options.iter().enumerate() {
-            println!("{:?}{:?}", i + 1, m);
+        for (i, e) in self.from_console.iter().enumerate() {
+            println!("{}:{}", i + 1, e);
         }
     }
-
-    fn process_command(&mut self) {
-        match Works::get_input("Enter comand index") {
-            Ok(inp) => {
-                match inp.as_str() {
-                    "1" => { self.work_manager.add_task(Works::new_from_console()) }
-                    "2" => { self.work_manager.print_job() }
-                    _ => { println!("I don't understand") }
+    fn console_command(&mut self) {
+        Self::print_menu(self);
+        match User::get_input("Enter command") {
+            Ok(res) => {
+                match res.as_str() {
+                    "1" => self.manager.add_user(User::new_from_console()),
+                    "2" => self.manager.print_user(),
+                    "3" => {
+                        let name = User::get_input("name to find").expect("err");
+                        if let Some(i) = self.manager.find_user(name.as_str()) {
+                            self.manager.user.get(i).expect("err").print()
+                        } else {
+                            eprint!("err")
+                        }
+                    }
+                    "4" => {
+                        let name = User::get_input("name to find").expect("err");
+                        match self.manager.remove_user(name.as_str()) {
+                            Ok(e) => println!("{:?}", e),
+                            Err(e) => eprintln!("{:?}", e),
+                        }
+                    }
+                    "5" => {
+                        let name = User::get_input("name to find").expect("err");
+                        match self.manager.edit_user(&name, User::new_from_console()) {
+                            Ok(e) => println!("{:?}", e),
+                            Err(e) => eprint!("{}", e),
+                        }
+                    }
+                    _ => { println!("not command") }
                 }
             }
-            Err(e) => println!("{:?}", e),
+            Err(_) => eprint!("err"),
         }
     }
 }
 
 fn main() {
-    let mut manager = ConsoleManager::new();
-    manager.print_menu();
+    let mut app = Console::new();
+
     loop {
-        manager.process_command();
+        app.console_command();
         println!("");
     }
 }
