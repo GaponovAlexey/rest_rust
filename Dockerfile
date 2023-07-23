@@ -14,7 +14,7 @@
 # ENTRYPOINT ["/rest_rust"]
 
 # Stage 1: Building the application
-FROM rust AS builder
+FROM rust:alpine  AS builder
 
 # Install musl tools and copy the current folder into the build folder
 RUN apt-get update && apt-get install -y musl-tools 
