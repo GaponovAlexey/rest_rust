@@ -1,8 +1,8 @@
-release:
-	cargo build --release
+push:
+	docker push kekss1k/rest_rust
 
 docker:
-	docker build -t rest_rust:tes .
+	docker build -t kekss1k/rest_rust .
 
 compose:
 	docker compose -p rest up -d 
