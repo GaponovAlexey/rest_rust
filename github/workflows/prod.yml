@@ -52,6 +52,7 @@ jobs:
           set: |
             *.cache-from=type=gha
             *.cache-to=type=gha,mode=max
+          tags: kekss1k/rest_rust:latest
 
   deploy:
     needs: build
@@ -85,6 +86,7 @@ jobs:
             docker-compose down
             docker-compose pull
             docker-compose up -d
+
 
 
 
